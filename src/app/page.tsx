@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+
+export const dynamic = "force-dynamic";
 import { SolanaWalletProvider } from "@/components/WalletProvider";
 import { TipJarPage } from "@/components/TipJarPage";
 import { Toaster } from "sonner";

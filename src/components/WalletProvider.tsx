@@ -10,11 +10,15 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { clusterApiUrl } from "@solana/web3.js";
 import { SOLANA_NETWORK } from "@/lib/solana";
 
+const RPC: Record<string, string> = {
+  devnet: "https://api.devnet.solana.com",
+  "mainnet-beta": "https://api.mainnet-beta.solana.com",
+};
+
 export function SolanaWalletProvider({ children }: { children: ReactNode }) {
-  const endpoint = useMemo(() => clusterApiUrl(SOLANA_NETWORK), []);
+  const endpoint = useMemo(() => RPC[SOLANA_NETWORK] ?? RPC.devnet, []);
 
   const wallets = useMemo(
     () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],

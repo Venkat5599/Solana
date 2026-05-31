@@ -1,5 +1,10 @@
-import { Connection, clusterApiUrl } from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
 import type { LegionGaslessConfig } from "./legion-gasless";
+
+const RPC_URLS: Record<string, string> = {
+  devnet: "https://api.devnet.solana.com",
+  "mainnet-beta": "https://api.mainnet-beta.solana.com",
+};
 
 export type SolanaNetwork = "devnet" | "mainnet-beta";
 
@@ -32,7 +37,7 @@ let _connection: Connection | null = null;
 
 export function getConnection(): Connection {
   if (!_connection) {
-    _connection = new Connection(clusterApiUrl(SOLANA_NETWORK), "confirmed");
+    _connection = new Connection(RPC_URLS[SOLANA_NETWORK] ?? RPC_URLS.devnet, "confirmed");
   }
   return _connection;
 }
