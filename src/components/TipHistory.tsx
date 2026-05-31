@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
-import { ConfirmedSignatureInfo } from "@solana/web3.js";
-import { ExternalLink, Clock } from "lucide-react";
+import type { ConfirmedSignatureInfo } from "@solana/web3.js";
+import { ExternalLink, Clock, RefreshCw } from "lucide-react";
 import { explorerUrl, truncateAddress } from "@/lib/solana";
 import { formatTimestamp } from "@/lib/utils";
 
@@ -17,12 +17,10 @@ export function TipHistory() {
     if (!publicKey) return;
     setLoading(true);
     try {
-      const sigs = await connection.getSignaturesForAddress(publicKey, {
-        limit: 10,
-      });
+      const sigs = await connection.getSignaturesForAddress(publicKey, { limit: 10 });
       setSignatures(sigs);
     } catch {
-      // silently fail — history is optional
+      // non-critical
     } finally {
       setLoading(false);
     }
@@ -39,59 +37,65 @@ export function TipHistory() {
   if (!connected) return null;
 
   return (
-    <div className="bg-[#1a1a24] border border-[#2a2a3a] rounded-2xl p-6 w-full max-w-md mx-auto mt-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Clock className="w-4 h-4 text-gray-400" />
-        <h3 className="text-sm font-semibold text-gray-300">Recent Transactions</h3>
+    <div className="glass rounded-2xl border border-[#1e1e2e]">
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <div className="flex items-center gap-2">
+          <Clock className="w-3.5 h-3.5 text-[#8b8b9e]" />
+          <h3 className="text-sm font-semibold text-white">Recent Transactions</h3>
+        </div>
+        <button
+          onClick={fetchHistory}
+          disabled={loading}
+          className="text-[#8b8b9e] hover:text-white transition-colors disabled:opacity-40"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
-      {loading && (
-        <div className="text-center py-4 text-gray-500 text-sm">Loading...</div>
-      )}
+      <div className="px-5 pb-5">
+        {loading && signatures.length === 0 && (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-10 rounded-lg bg-[#1e1e2e]/60 animate-pulse" />
+            ))}
+          </div>
+        )}
 
-      {!loading && signatures.length === 0 && (
-        <div className="text-center py-4 text-gray-600 text-sm">
-          No transactions yet
-        </div>
-      )}
+        {!loading && signatures.length === 0 && (
+          <div className="text-center py-6 text-[#3a3a52] text-sm">
+            No transactions yet
+          </div>
+        )}
 
-      {!loading && signatures.length > 0 && (
-        <div className="space-y-2">
-          {signatures.map((sig) => (
-            <div
-              key={sig.signature}
-              className="flex items-center justify-between py-2 border-b border-[#2a2a3a] last:border-0"
-            >
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-400 font-mono">
-                  {truncateAddress(sig.signature)}
-                </span>
-                {sig.blockTime && (
-                  <span className="text-xs text-gray-600 mt-0.5">
-                    {formatTimestamp(sig.blockTime)}
-                  </span>
-                )}
-              </div>
+        {signatures.length > 0 && (
+          <div className="space-y-1">
+            {signatures.map((sig, i) => (
               <a
+                key={sig.signature}
                 href={explorerUrl(sig.signature)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#9945FF] hover:text-[#14F195] transition-colors ml-2 flex-shrink-0"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-[#9945FF]/06 border border-transparent hover:border-[#9945FF]/15 transition-all duration-150 group"
               >
-                <ExternalLink className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-3">
+                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${i === 0 ? "bg-[#14F195]" : "bg-[#2a2a3e]"}`} />
+                  <div>
+                    <p className="text-xs font-mono text-white group-hover:text-[#9945FF] transition-colors">
+                      {truncateAddress(sig.signature)}
+                    </p>
+                    {sig.blockTime && (
+                      <p className="text-[10px] text-[#3a3a52] mt-0.5">
+                        {formatTimestamp(sig.blockTime)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <ExternalLink className="w-3 h-3 text-[#3a3a52] group-hover:text-[#9945FF] transition-colors flex-shrink-0" />
               </a>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <button
-        onClick={fetchHistory}
-        disabled={loading}
-        className="mt-3 text-xs text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-50"
-      >
-        Refresh
-      </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
