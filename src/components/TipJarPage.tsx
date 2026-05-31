@@ -2,11 +2,16 @@
 
 import { useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import dynamic from "next/dynamic";
 import { TipJar } from "./TipJar";
 import { TipHistory } from "./TipHistory";
 import { truncateAddress, SOLANA_NETWORK } from "@/lib/solana";
 import { useState, useEffect } from "react";
+
+const WalletMultiButton = dynamic(
+  () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
+  { ssr: false }
+);
 
 const FEATURES = [
   { label: "No SOL required", sub: "Gas covered by sponsor wallet, atomically" },
