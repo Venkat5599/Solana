@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey, Transaction } from "@solana/web3.js";
-import { LegionGasless } from "../LegionGasless.js";
+import { LegionGasless } from "../LegionGasless";
 import type {
   LegionGaslessConfig,
   GaslessTxStatus,
@@ -9,7 +9,7 @@ import type {
   SendGaslessTipParams,
   SponsorResponse,
   SponsorErrorResponse,
-} from "../types.js";
+} from "../types";
 
 /**
  * React hook for sending gasless Solana tip transactions.

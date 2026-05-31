@@ -1,1 +1,1 @@
-export { createSponsorRoute, createSponsorPubkeyRoute } from "./createSponsorRoute.js";
+export { createSponsorRoute, createSponsorPubkeyRoute } from "./createSponsorRoute";

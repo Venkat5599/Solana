@@ -1,4 +1,4 @@
-export { LegionGasless } from "./LegionGasless.js";
+export { LegionGasless } from "./LegionGasless";
 export type {
   LegionGaslessConfig,
   LegionFeeToken,
@@ -12,4 +12,4 @@ export type {
   GaslessTxStatus,
   UseGaslessTransactionResult,
   SendGaslessTipParams,
-} from "./types.js";
+} from "./types";

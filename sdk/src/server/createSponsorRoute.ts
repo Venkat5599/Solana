@@ -6,7 +6,7 @@ import {
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import bs58 from "bs58";
-import type { SponsorRouteConfig, SponsorErrorCode } from "../types.js";
+import type { SponsorRouteConfig, SponsorErrorCode } from "../types";
 
 // Simple in-process rate limiter (resets on server restart)
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();

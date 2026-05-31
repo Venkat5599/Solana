@@ -14,7 +14,7 @@ import type {
   LegionFeeToken,
   BuildGaslessTxParams,
   GaslessTransaction,
-} from "./types.js";
+} from "./types";
 
 const USDC_DECIMALS = 6;
 

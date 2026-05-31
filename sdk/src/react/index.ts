@@ -1,1 +1,1 @@
-export { useGaslessTransaction } from "./useGaslessTransaction.js";
+export { useGaslessTransaction } from "./useGaslessTransaction";
