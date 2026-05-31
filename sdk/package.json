@@ -1,0 +1,22 @@
+{
+  "name": "@legion/gasless",
+  "version": "0.1.0",
+  "description": "SDK for gasless Solana transactions. Sponsor wallet covers SOL gas; users pay a small SPL token fee atomically.",
+  "keywords": ["solana", "gasless", "web3", "blockchain", "sdk", "usdc", "spl-token"],
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
+    "./react": "./src/react/index.ts"
+  },
+  "peerDependencies": {
+    "@solana/web3.js": "^1.x",
+    "@solana/spl-token": "^0.4.x",
+    "react": "^18.x"
+  },
+  "dependencies": {
+    "bs58": "^6.0.0"
+  }
+}
