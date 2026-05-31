@@ -3,99 +3,97 @@
 import { useEffect, useState, useCallback } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import type { ConfirmedSignatureInfo } from "@solana/web3.js";
-import { ExternalLink, Clock, RefreshCw } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { explorerUrl, truncateAddress } from "@/lib/solana";
 import { formatTimestamp } from "@/lib/utils";
 
 export function TipHistory() {
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
-  const [signatures, setSignatures] = useState<ConfirmedSignatureInfo[]>([]);
+  const [sigs, setSigs] = useState<ConfirmedSignatureInfo[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchHistory = useCallback(async () => {
+  const fetch = useCallback(async () => {
     if (!publicKey) return;
     setLoading(true);
     try {
-      const sigs = await connection.getSignaturesForAddress(publicKey, { limit: 10 });
-      setSignatures(sigs);
-    } catch {
-      // non-critical
-    } finally {
-      setLoading(false);
-    }
+      const result = await connection.getSignaturesForAddress(publicKey, { limit: 10 });
+      setSigs(result);
+    } catch { /* non-critical */ }
+    finally { setLoading(false); }
   }, [publicKey, connection]);
 
   useEffect(() => {
-    if (connected && publicKey) {
-      fetchHistory();
-    } else {
-      setSignatures([]);
-    }
-  }, [connected, publicKey, fetchHistory]);
+    if (connected && publicKey) fetch();
+    else setSigs([]);
+  }, [connected, publicKey, fetch]);
 
   if (!connected) return null;
 
   return (
-    <div className="glass rounded-2xl border border-[#1e1e2e]">
-      <div className="flex items-center justify-between px-5 pt-5 pb-3">
-        <div className="flex items-center gap-2">
-          <Clock className="w-3.5 h-3.5 text-[#8b8b9e]" />
-          <h3 className="text-sm font-semibold text-white">Recent Transactions</h3>
-        </div>
-        <button
-          onClick={fetchHistory}
-          disabled={loading}
-          className="text-[#8b8b9e] hover:text-white transition-colors disabled:opacity-40"
+    <div className="border border-[#e8e8e8] rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f0]">
+        <p
+          className="text-[11px] uppercase tracking-widest text-[#aaa]"
+          style={{ letterSpacing: "0.1em" }}
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+          Recent transactions
+        </p>
+        <button
+          onClick={fetch}
+          disabled={loading}
+          className="text-[11px] text-[#bbb] hover:text-black transition-colors underline underline-offset-2 disabled:opacity-40"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          {loading ? "Loading..." : "Refresh"}
         </button>
       </div>
 
-      <div className="px-5 pb-5">
-        {loading && signatures.length === 0 && (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-10 rounded-lg bg-[#1e1e2e]/60 animate-pulse" />
-            ))}
-          </div>
-        )}
+      {loading && sigs.length === 0 && (
+        <div className="p-5 space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-8 rounded-lg bg-[#f5f5f5] animate-pulse" />
+          ))}
+        </div>
+      )}
 
-        {!loading && signatures.length === 0 && (
-          <div className="text-center py-6 text-[#3a3a52] text-sm">
-            No transactions yet
-          </div>
-        )}
+      {!loading && sigs.length === 0 && (
+        <div className="px-5 py-8 text-center text-xs text-[#ccc]">
+          No transactions yet
+        </div>
+      )}
 
-        {signatures.length > 0 && (
-          <div className="space-y-1">
-            {signatures.map((sig, i) => (
-              <a
-                key={sig.signature}
-                href={explorerUrl(sig.signature)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-[#9945FF]/06 border border-transparent hover:border-[#9945FF]/15 transition-all duration-150 group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${i === 0 ? "bg-[#14F195]" : "bg-[#2a2a3e]"}`} />
-                  <div>
-                    <p className="text-xs font-mono text-white group-hover:text-[#9945FF] transition-colors">
-                      {truncateAddress(sig.signature)}
+      {sigs.length > 0 && (
+        <div>
+          {sigs.map((sig, i) => (
+            <a
+              key={sig.signature}
+              href={explorerUrl(sig.signature)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between px-5 py-3 border-b border-[#f8f8f8] last:border-0 hover:bg-[#fafafa] group transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: i === 0 ? "#22c55e" : "#e0e0e0" }}
+                />
+                <div>
+                  <p className="text-xs font-mono text-[#444] group-hover:text-black transition-colors">
+                    {truncateAddress(sig.signature)}
+                  </p>
+                  {sig.blockTime && (
+                    <p className="text-[10px] text-[#bbb] mt-0.5">
+                      {formatTimestamp(sig.blockTime)}
                     </p>
-                    {sig.blockTime && (
-                      <p className="text-[10px] text-[#3a3a52] mt-0.5">
-                        {formatTimestamp(sig.blockTime)}
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
-                <ExternalLink className="w-3 h-3 text-[#3a3a52] group-hover:text-[#9945FF] transition-colors flex-shrink-0" />
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
+              </div>
+              <ExternalLink className="w-3 h-3 text-[#ccc] group-hover:text-black transition-colors flex-shrink-0 ml-2" />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

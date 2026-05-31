@@ -4,13 +4,15 @@ import { useState, useCallback, useEffect } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { toast } from "sonner";
-import { Send, Loader2, ExternalLink, AlertCircle, CheckCircle2, Zap } from "lucide-react";
+import { ExternalLink, AlertCircle, CheckCircle2 } from "lucide-react";
 import { LegionGasless } from "@/lib/legion-gasless";
-import { LEGION_CONFIG, explorerUrl, truncateAddress, SOLANA_NETWORK } from "@/lib/solana";
+import { LEGION_CONFIG, explorerUrl, truncateAddress } from "@/lib/solana";
 import { isValidSolanaAddress, solToLamports } from "@/lib/utils";
 import { cn } from "@/lib/cn";
 
 const legionGasless = new LegionGasless(LEGION_CONFIG);
+
+const QUICK_AMOUNTS = ["0.001", "0.01", "0.1", "1"];
 
 interface TipJarProps {
   prefillRecipient?: string;
@@ -29,10 +31,9 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
     if (prefillRecipient) setRecipient(prefillRecipient);
   }, [prefillRecipient]);
 
-  const recipientTouched = recipient.length > 0;
+  const touched = recipient.length > 0;
   const recipientValid = isValidSolanaAddress(recipient);
-  const recipientError = recipientTouched && !recipientValid;
-
+  const recipientError = touched && !recipientValid;
   const amount = parseFloat(amountSol);
   const amountValid = !isNaN(amount) && amount > 0;
   const canSend = connected && recipientValid && amountValid && !loading;
@@ -43,82 +44,61 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
     setLastTxSig(null);
 
     try {
-      const sponsorRes = await fetch("/api/sponsor-pubkey");
-      if (!sponsorRes.ok) {
-        toast.error("Sponsor service unavailable.", { icon: <AlertCircle className="w-4 h-4" /> });
-        return;
-      }
-      const { publicKey: sponsorPubkeyStr } = (await sponsorRes.json()) as { publicKey: string };
-      const sponsorPublicKey = new PublicKey(sponsorPubkeyStr);
-      const recipientPublicKey = new PublicKey(recipient);
+      const res = await fetch("/api/sponsor-pubkey");
+      if (!res.ok) { toast.error("Sponsor service unavailable."); return; }
+      const { publicKey: spk } = (await res.json()) as { publicKey: string };
 
       const tx = await legionGasless.buildGaslessTipTransaction({
         connection,
-        sponsorPublicKey,
+        sponsorPublicKey: new PublicKey(spk),
         senderPublicKey: publicKey,
-        recipientPublicKey,
+        recipientPublicKey: new PublicKey(recipient),
         tipAmountLamports: solToLamports(amount),
       });
 
-      const userSignedTx = await signTransaction(tx);
-      const txBase64 = userSignedTx
-        .serialize({ requireAllSignatures: false })
-        .toString("base64");
+      const signed = await signTransaction(tx);
+      const b64 = signed.serialize({ requireAllSignatures: false }).toString("base64");
 
-      const sponsorResponse = await fetch("/api/sponsor", {
+      const sponsorRes = await fetch("/api/sponsor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transaction: txBase64 }),
+        body: JSON.stringify({ transaction: b64 }),
       });
-
-      const sponsorData = (await sponsorResponse.json()) as {
-        transaction?: string;
-        error?: string;
-        code?: string;
-      };
-
-      if (!sponsorResponse.ok || !sponsorData.transaction) {
-        toast.error(sponsorData.error ?? "Sponsor signing failed.", {
-          icon: <AlertCircle className="w-4 h-4" />,
-        });
+      const sponsorData = (await sponsorRes.json()) as { transaction?: string; error?: string };
+      if (!sponsorRes.ok || !sponsorData.transaction) {
+        toast.error(sponsorData.error ?? "Sponsor signing failed.");
         return;
       }
 
-      const signedBuffer = Buffer.from(sponsorData.transaction, "base64");
-      const signedTx = Transaction.from(signedBuffer);
-      const signature = await connection.sendRawTransaction(signedTx.serialize(), {
+      const finalTx = Transaction.from(Buffer.from(sponsorData.transaction, "base64"));
+      const sig = await connection.sendRawTransaction(finalTx.serialize(), {
         skipPreflight: false,
         preflightCommitment: "confirmed",
       });
-
-      await connection.confirmTransaction(signature, "confirmed");
-      setLastTxSig(signature);
+      await connection.confirmTransaction(sig, "confirmed");
+      setLastTxSig(sig);
 
       toast.success(
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold">Tip sent! ⚡</span>
-          <a
-            href={explorerUrl(signature)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs opacity-70 hover:opacity-100 underline"
-          >
-            {truncateAddress(signature)} <ExternalLink className="w-3 h-3" />
+        <span className="flex flex-col gap-0.5">
+          <span className="font-medium" style={{ fontFamily: "var(--font-heading)" }}>Tip sent.</span>
+          <a href={explorerUrl(sig)} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs opacity-60 hover:opacity-100 underline">
+            {truncateAddress(sig)} <ExternalLink className="w-3 h-3" />
           </a>
-        </div>,
-        { icon: <CheckCircle2 className="w-4 h-4 text-[#14F195]" />, duration: 8000 }
+        </span>,
+        { icon: <CheckCircle2 className="w-4 h-4" />, duration: 8000 }
       );
-
       setAmountSol("");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      const friendly = message.includes("User rejected") || message.includes("WalletSignTransactionError")
-        ? "Transaction rejected."
-        : message.includes("insufficient funds")
-        ? "Insufficient USDC balance for fee."
-        : message.includes("Blockhash not found") || message.includes("block height exceeded")
-        ? "Transaction expired — please try again."
-        : `Error: ${message.slice(0, 60)}`;
+      const msg = err instanceof Error ? err.message : String(err);
+      const friendly =
+        msg.includes("User rejected") || msg.includes("WalletSignTransactionError")
+          ? "Transaction rejected."
+          : msg.includes("insufficient funds")
+          ? "Insufficient USDC balance for fee."
+          : msg.includes("Blockhash not found") || msg.includes("block height exceeded")
+          ? "Transaction expired — try again."
+          : `Error: ${msg.slice(0, 80)}`;
       toast.error(friendly, { icon: <AlertCircle className="w-4 h-4" /> });
     } finally {
       setLoading(false);
@@ -126,53 +106,49 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
   }, [canSend, publicKey, signTransaction, connection, recipient, amount]);
 
   return (
-    <div className="glass gradient-border rounded-2xl p-6 shadow-card">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Zap className="w-4 h-4 text-[#9945FF]" />
-          <h2 className="text-lg font-bold text-white">Send a Tip</h2>
-        </div>
-        <p className="text-sm text-[#8b8b9e]">
-          Gas covered by sponsor · 0.05 USDC fee · {SOLANA_NETWORK}
-        </p>
-      </div>
+    <div className="border border-[#e8e8e8] rounded-2xl p-6 sm:p-8 bg-white">
+      <p
+        className="text-[11px] uppercase tracking-widest text-[#aaa] mb-6"
+        style={{ letterSpacing: "0.1em" }}
+      >
+        Send a tip
+      </p>
 
-      {/* Form */}
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Recipient */}
         <div>
-          <label className="block text-xs font-semibold text-[#8b8b9e] uppercase tracking-wider mb-2">
-            Recipient
+          <label className="block text-sm font-medium text-black mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+            Recipient address
           </label>
           <input
             type="text"
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
             disabled={!!prefillRecipient || loading}
-            placeholder="Solana wallet address"
+            placeholder="Solana wallet address (base58)"
             className={cn(
-              "input-field font-mono text-xs",
-              recipientError && "error",
-              prefillRecipient && "opacity-60 cursor-not-allowed"
+              "w-full bg-[#fafafa] border rounded-lg px-4 py-3 text-sm font-mono text-black placeholder-[#ccc] outline-none transition-all duration-150",
+              recipientError
+                ? "border-red-300 ring-2 ring-red-100"
+                : "border-[#e8e8e8] focus:border-black focus:ring-2 focus:ring-black/5",
+              (!!prefillRecipient || loading) && "opacity-50 cursor-not-allowed"
             )}
           />
           {recipientError && (
-            <p className="flex items-center gap-1 text-red-400 text-xs mt-1.5">
+            <p className="flex items-center gap-1.5 text-red-500 text-xs mt-1.5">
               <AlertCircle className="w-3 h-3" /> Invalid Solana address
             </p>
           )}
           {prefillRecipient && recipientValid && (
-            <p className="flex items-center gap-1 text-[#14F195] text-xs mt-1.5">
-              <CheckCircle2 className="w-3 h-3" />
-              Tipping {truncateAddress(prefillRecipient)}
+            <p className="flex items-center gap-1.5 text-[#22c55e] text-xs mt-1.5">
+              <CheckCircle2 className="w-3 h-3" /> Tipping {truncateAddress(prefillRecipient)}
             </p>
           )}
         </div>
 
         {/* Amount */}
         <div>
-          <label className="block text-xs font-semibold text-[#8b8b9e] uppercase tracking-wider mb-2">
+          <label className="block text-sm font-medium text-black mb-2" style={{ fontFamily: "var(--font-heading)" }}>
             Amount
           </label>
           <div className="relative">
@@ -184,21 +160,29 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
               placeholder="0.001"
               min="0.000001"
               step="0.001"
-              className="input-field pr-16"
+              className="w-full bg-[#fafafa] border border-[#e8e8e8] rounded-lg px-4 py-3 text-sm font-mono text-black placeholder-[#ccc] outline-none focus:border-black focus:ring-2 focus:ring-black/5 transition-all duration-150 pr-14 disabled:opacity-50"
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#8b8b9e] tracking-wide">
+            <span
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#999]"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
               SOL
             </span>
           </div>
 
           {/* Quick amounts */}
           <div className="flex gap-2 mt-2">
-            {["0.001", "0.01", "0.1", "1"].map((val) => (
+            {QUICK_AMOUNTS.map((val) => (
               <button
                 key={val}
                 onClick={() => setAmountSol(val)}
                 disabled={loading}
-                className="flex-1 py-1.5 text-xs rounded-lg border border-[#1e1e2e] bg-[#0d0d14] text-[#8b8b9e] hover:border-[#9945FF]/50 hover:text-white hover:bg-[#9945FF]/08 transition-all duration-200 disabled:opacity-40"
+                className={cn(
+                  "flex-1 py-1.5 text-xs rounded-lg border transition-colors duration-150 font-mono",
+                  amountSol === val
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-[#888] border-[#e8e8e8] hover:border-black hover:text-black"
+                )}
               >
                 {val}
               </button>
@@ -208,19 +192,25 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
 
         {/* Summary */}
         {amountValid && (
-          <div className="rounded-xl bg-[#0d0d14] border border-[#1e1e2e] p-3 space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-[#8b8b9e]">Tip amount</span>
-              <span className="text-white font-mono font-medium">{amount} SOL</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-[#8b8b9e]">Gasless fee (USDC)</span>
-              <span className="text-white font-mono">$0.05</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-[#8b8b9e]">SOL gas</span>
-              <span className="text-[#14F195] font-medium">Free (sponsored)</span>
-            </div>
+          <div className="bg-[#fafafa] border border-[#f0f0f0] rounded-xl p-4 space-y-2">
+            {[
+              ["Tip amount", `${amount} SOL`],
+              ["Gasless fee", "$0.05 USDC"],
+              ["SOL gas", "Free (sponsored)"],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between items-center">
+                <span className="text-xs text-[#999]">{k}</span>
+                <span
+                  className={cn(
+                    "text-xs font-mono",
+                    k === "SOL gas" ? "text-[#22c55e]" : "text-black"
+                  )}
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  {v}
+                </span>
+              </div>
+            ))}
           </div>
         )}
 
@@ -229,23 +219,18 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
           onClick={handleSend}
           disabled={!canSend}
           className={cn(
-            "btn-primary w-full flex items-center justify-center gap-2 text-sm",
-            loading && "opacity-80 cursor-wait"
+            "w-full py-3.5 px-6 rounded-xl text-sm font-medium transition-all duration-150",
+            canSend
+              ? "bg-black text-white hover:opacity-75"
+              : "bg-[#f0f0f0] text-[#bbb] cursor-not-allowed"
           )}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Submitting to Solana...
-            </>
-          ) : !connected ? (
-            "Connect wallet to send"
-          ) : (
-            <>
-              <Send className="w-4 h-4" />
-              Send Tip
-            </>
-          )}
+          {loading
+            ? "Submitting..."
+            : !connected
+            ? "Connect wallet to send"
+            : "Send tip →"}
         </button>
 
         {/* Last tx */}
@@ -254,11 +239,9 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
             href={explorerUrl(lastTxSig)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 text-xs text-[#14F195] hover:text-white transition-colors"
+            className="flex items-center justify-center gap-1.5 text-xs text-[#999] hover:text-black transition-colors underline underline-offset-2"
           >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            View last transaction on Explorer
-            <ExternalLink className="w-3 h-3" />
+            View last transaction <ExternalLink className="w-3 h-3" />
           </a>
         )}
       </div>

@@ -6,14 +6,26 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { TipJar } from "./TipJar";
 import { TipHistory } from "./TipHistory";
 import { truncateAddress, SOLANA_NETWORK } from "@/lib/solana";
-import { Copy, Github, Zap } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const FEATURES = [
+  { label: "No SOL required", sub: "Gas covered by sponsor wallet, atomically" },
+  { label: "Fee in USDC", sub: "0.05 USDC per transaction, nothing else" },
+  { label: "On-chain always", sub: "Every tip is a real Solana transaction" },
+];
 
 export function TipJarPage() {
   const searchParams = useSearchParams();
   const prefillRecipient = searchParams.get("to") ?? undefined;
   const { publicKey, connected } = useWallet();
+
+  const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 80);
+    return () => clearTimeout(t);
+  }, []);
 
   const tipJarUrl =
     typeof window !== "undefined" && publicKey
@@ -22,184 +34,209 @@ export function TipJarPage() {
 
   const handleCopy = () => {
     if (!tipJarUrl) return;
-    navigator.clipboard.writeText(tipJarUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard.writeText(tipJarUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden">
-      {/* Background glows */}
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#9945FF] rounded-full opacity-[0.06] blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#14F195] rounded-full opacity-[0.04] blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#9945FF] rounded-full opacity-[0.02] blur-[160px]" />
-      </div>
+    <div className="min-h-screen bg-white flex flex-col">
 
-      {/* Grid pattern overlay */}
-      <div
-        className="pointer-events-none fixed inset-0 opacity-[0.015]"
-        style={{
-          backgroundImage: `linear-gradient(rgba(153,69,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.5) 1px, transparent 1px)`,
-          backgroundSize: "60px 60px",
-        }}
-      />
-
-      {/* Header */}
-      <header className="relative z-10 border-b border-[#1e1e2e]/60 glass-strong">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#9945FF] to-[#14F195] flex items-center justify-center shadow-glow-purple">
-              <Zap className="w-4 h-4 text-white" fill="white" />
-            </div>
-            <div>
-              <span className="font-bold text-white text-sm tracking-tight">Gasless Tip Jar</span>
-              <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded-full border border-[#14F195]/30 text-[#14F195] bg-[#14F195]/05">
-                {SOLANA_NETWORK}
-              </span>
-            </div>
+      {/* ── Navbar ──────────────────────────────────────────────────────── */}
+      <header className="fixed top-0 left-0 right-0 z-10 bg-white border-b border-[#f0f0f0]">
+        <div className="max-w-5xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="text-[18px] tracking-tight text-black leading-none select-none"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Tip Jar(R)
+            </span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 border border-[#e0e0e0] text-[#888] rounded uppercase tracking-wider">
+              {SOLANA_NETWORK}
+            </span>
           </div>
 
-          {/* Right: address + wallet btn */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {connected && publicKey && (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#13131a] border border-[#1e1e2e]">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse" />
-                <span className="text-xs text-[#8b8b9e] font-mono">
-                  {truncateAddress(publicKey.toBase58())}
-                </span>
-              </div>
+              <span className="hidden sm:block text-sm text-[#888] font-mono tracking-tight">
+                {truncateAddress(publicKey.toBase58())}
+              </span>
             )}
-            <WalletMultiButton
-              style={{
-                height: "40px",
-                fontSize: "13px",
-                padding: "0 18px",
-                borderRadius: "12px",
-                fontWeight: "600",
-              }}
-            />
+            <WalletMultiButton />
           </div>
         </div>
       </header>
 
-      {/* Main */}
-      <main className="relative z-10 max-w-5xl mx-auto px-4 py-12">
-        {/* Hero section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#9945FF]/30 bg-[#9945FF]/08 mb-6">
-            <Zap className="w-3 h-3 text-[#9945FF]" />
-            <span className="text-xs font-medium text-[#9945FF]">Powered by Legion Gasless Protocol</span>
-          </div>
-          <h1 className="text-5xl sm:text-6xl font-bold text-white mb-4 tracking-tight leading-tight">
-            Tip on Solana
-            <br />
-            <span className="gradient-text">without SOL</span>
-          </h1>
-          <p className="text-[#8b8b9e] text-lg max-w-md mx-auto leading-relaxed">
-            Send on-chain tips using only USDC. Gas is covered by the sponsor wallet — atomically, in the same transaction.
-          </p>
-        </div>
-
-        {/* Two-column layout on desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-          {/* Left col: Tip form */}
-          <div className="lg:col-span-3">
-            <TipJar prefillRecipient={prefillRecipient} />
-          </div>
-
-          {/* Right col: Info + History */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* How it works */}
-            <div className="glass rounded-2xl p-5 border border-[#1e1e2e]">
-              <h3 className="text-sm font-semibold text-white mb-4">How it works</h3>
-              <div className="space-y-3">
-                {[
-                  { step: "1", label: "Connect wallet", sub: "Phantom or Solflare" },
-                  { step: "2", label: "Enter tip amount", sub: "In SOL, any amount" },
-                  { step: "3", label: "Sign once", sub: "No SOL needed — just USDC" },
-                  { step: "4", label: "Confirmed on-chain", sub: "~2s on Solana devnet" },
-                ].map(({ step, label, sub }) => (
-                  <div key={step} className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#9945FF] to-[#7c3aed] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-[10px] font-bold text-white">{step}</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">{label}</p>
-                      <p className="text-xs text-[#8b8b9e] mt-0.5">{sub}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Fee breakdown */}
-            <div className="glass rounded-2xl p-5 border border-[#1e1e2e]">
-              <h3 className="text-sm font-semibold text-white mb-3">Fee breakdown</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-[#8b8b9e]">Solana network fee</span>
-                  <span className="text-[#14F195] font-mono text-xs">~$0.0007 SOL</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-[#8b8b9e]">Covered by</span>
-                  <span className="text-white font-medium text-xs">Sponsor wallet ✓</span>
-                </div>
-                <div className="h-px bg-[#1e1e2e] my-2" />
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-[#8b8b9e]">You pay (USDC fee)</span>
-                  <span className="text-white font-mono font-semibold">$0.05</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Share tip jar */}
-            {connected && publicKey && tipJarUrl && (
-              <div className="glass rounded-2xl p-5 border border-[#9945FF]/20 bg-[#9945FF]/04">
-                <h3 className="text-sm font-semibold text-white mb-1">Your tip jar link</h3>
-                <p className="text-xs text-[#8b8b9e] mb-3">Share this — fans tip you directly</p>
-                <div className="flex gap-2">
-                  <div className="flex-1 min-w-0 bg-[#0d0d14] border border-[#1e1e2e] rounded-lg px-3 py-2">
-                    <p className="text-[#14F195] text-xs font-mono truncate">{tipJarUrl}</p>
-                  </div>
-                  <button
-                    onClick={handleCopy}
-                    className="flex-shrink-0 px-3 py-2 rounded-lg border border-[#9945FF]/40 bg-[#9945FF]/10 hover:bg-[#9945FF]/20 text-[#9945FF] transition-all duration-200"
-                  >
-                    {copied ? (
-                      <span className="text-xs font-medium text-[#14F195]">✓</span>
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* History */}
-            <TipHistory />
-          </div>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-[#1e1e2e]/60 mt-16 py-6 glass-strong">
-        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-[#3a3a52]">
-            Built for Superteam Earn · Legion Gasless Protocol on Solana
-          </p>
-          <a
-            href="https://github.com/Venkat5599/Solana"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-[#8b8b9e] hover:text-white transition-colors"
+      {/* ── Hero ────────────────────────────────────────────────────────── */}
+      <main className="flex-1 pt-14">
+        <section className="max-w-5xl mx-auto px-5 sm:px-8 pt-20 pb-16">
+          <div
+            style={{
+              opacity: visible ? 1 : 0,
+              transform: visible ? "translateY(0)" : "translateY(12px)",
+              transition: "opacity 0.5s ease, transform 0.5s ease",
+            }}
           >
-            <Github className="w-3.5 h-3.5" />
-            Venkat5599/Solana
-          </a>
-        </div>
-      </footer>
+            {/* Label */}
+            <p
+              className="text-[13px] tracking-widest uppercase text-[#999] mb-6 select-none"
+              style={{ letterSpacing: "0.12em" }}
+            >
+              Solana · Gasless Protocol
+            </p>
+
+            {/* Headline */}
+            <h1
+              className="text-[clamp(42px,8vw,96px)] leading-[0.95] tracking-tight text-black mb-8 max-w-3xl"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Tip without
+              <br />
+              <span className="text-[#999]">holding SOL.</span>
+            </h1>
+
+            {/* Sub */}
+            <p className="text-[clamp(15px,2vw,18px)] text-[#555] leading-relaxed max-w-lg mb-10">
+              Send on-chain SOL tips using only USDC. The sponsor wallet covers
+              Solana gas fees atomically — no exchange, no friction.
+            </p>
+
+            {/* Feature tags */}
+            <div className="flex flex-wrap gap-2 mb-16">
+              {FEATURES.map(({ label, sub }) => (
+                <div
+                  key={label}
+                  className="inline-flex items-center gap-2 border border-[#e8e8e8] rounded-full px-4 py-2 text-sm text-black bg-[#fafafa] hover:border-black transition-colors duration-200 cursor-default"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" />
+                  <span style={{ fontFamily: "var(--font-heading)" }}>{label}</span>
+                  <span className="text-[#aaa] text-xs hidden sm:block">— {sub}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Two-col layout ─────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 items-start">
+
+              {/* Left: tip form */}
+              <div>
+                <TipJar prefillRecipient={prefillRecipient} />
+              </div>
+
+              {/* Right: sidebar */}
+              <div className="space-y-5">
+
+                {/* How it works */}
+                <div className="border border-[#e8e8e8] rounded-xl p-5">
+                  <p className="text-[11px] uppercase tracking-widest text-[#aaa] mb-4" style={{ letterSpacing: "0.1em" }}>
+                    How it works
+                  </p>
+                  <ol className="space-y-4">
+                    {[
+                      ["Connect wallet", "Phantom or Solflare — no SOL needed"],
+                      ["Enter tip amount", "In SOL, any value above 0"],
+                      ["Sign once", "Wallet prompts for USDC fee approval"],
+                      ["Confirmed", "On-chain in ~2 seconds on Solana"],
+                    ].map(([step, desc], i) => (
+                      <li key={step} className="flex gap-4">
+                        <span className="text-[11px] text-[#ccc] font-mono mt-0.5 w-4 flex-shrink-0">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-black leading-tight" style={{ fontFamily: "var(--font-heading)" }}>
+                            {step}
+                          </p>
+                          <p className="text-xs text-[#999] mt-0.5">{desc}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                {/* Fee breakdown */}
+                <div className="border border-[#e8e8e8] rounded-xl p-5">
+                  <p className="text-[11px] uppercase tracking-widest text-[#aaa] mb-4" style={{ letterSpacing: "0.1em" }}>
+                    Fee breakdown
+                  </p>
+                  <div className="space-y-2.5">
+                    {[
+                      ["Solana network fee", "~$0.0007", "black"],
+                      ["Covered by sponsor", "✓", "green"],
+                      ["You pay (USDC)", "$0.05", "black"],
+                    ].map(([label, val, color]) => (
+                      <div key={label} className="flex justify-between items-center">
+                        <span className="text-sm text-[#666]">{label}</span>
+                        <span
+                          className="text-sm font-mono"
+                          style={{
+                            fontFamily: "var(--font-heading)",
+                            color: color === "green" ? "#22c55e" : "#0a0a0a",
+                          }}
+                        >
+                          {val}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="border-t border-[#f0f0f0] pt-2.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-black font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+                          Total cost to sender
+                        </span>
+                        <span className="text-sm font-mono" style={{ fontFamily: "var(--font-heading)" }}>
+                          $0.05 USDC
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Share link */}
+                {connected && publicKey && tipJarUrl && (
+                  <div className="border border-[#e8e8e8] rounded-xl p-5">
+                    <p className="text-[11px] uppercase tracking-widest text-[#aaa] mb-3" style={{ letterSpacing: "0.1em" }}>
+                      Your tip jar link
+                    </p>
+                    <div className="flex gap-2">
+                      <div className="flex-1 min-w-0 bg-[#f9f9f9] border border-[#eeeeee] rounded-lg px-3 py-2">
+                        <p className="text-xs font-mono text-[#444] truncate">{tipJarUrl}</p>
+                      </div>
+                      <button
+                        onClick={handleCopy}
+                        className="flex-shrink-0 px-3 py-2 rounded-lg border border-[#e8e8e8] text-xs text-black hover:bg-black hover:text-white hover:border-black transition-colors duration-200 font-medium"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {copied ? "✓" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* History */}
+                <TipHistory />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Footer divider + info ─────────────────────────────────────── */}
+        <footer className="border-t border-[#f0f0f0] px-5 sm:px-8 py-6">
+          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-[#bbb]">
+              Built for Superteam Earn · Legion Gasless Protocol on Solana
+            </p>
+            <a
+              href="https://github.com/Venkat5599/Solana"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[#bbb] hover:text-black transition-colors underline underline-offset-2"
+            >
+              github.com/Venkat5599/Solana
+            </a>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }
