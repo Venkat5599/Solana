@@ -1,11 +1,11 @@
-# @legion/gasless
+# gasless-sol
 
 Gasless Solana transactions. Your users shouldn't need SOL just to use your app.
 
 The SDK handles the gas — your sponsor wallet covers it — and collects a small fee in USDC, USDT, or whatever SPL token you choose. One transaction, fully atomic, no SOL required on the user's end.
 
 ```ts
-import { LegionGasless } from "@legion/gasless";
+import { LegionGasless } from "gasless-sol";
 
 const legion = new LegionGasless({
   gasless: {
@@ -23,7 +23,7 @@ const legion = new LegionGasless({
 ## Installation
 
 ```bash
-bun add @legion/gasless @solana/web3.js @solana/spl-token
+bun add gasless-sol @solana/web3.js @solana/spl-token
 ```
 
 ---
@@ -46,7 +46,7 @@ The sponsor wallet needs SOL to cover Solana network fees (~5000 lamports per tx
 ## React (recommended)
 
 ```tsx
-import { useGaslessTransaction } from "@legion/gasless/react";
+import { useGaslessTransaction } from "gasless-sol/react";
 
 const LEGION_CONFIG = {
   gasless: {
@@ -86,7 +86,7 @@ The hook handles the full flow: build → user sign → sponsor co-sign → subm
 
 ```ts
 // app/api/sponsor/route.ts
-import { createSponsorRoute } from "@legion/gasless/server";
+import { createSponsorRoute } from "gasless-sol/server";
 
 export const { GET, POST } = createSponsorRoute({
   privateKeyEnvVar: "SPONSOR_PRIVATE_KEY",  // default
@@ -97,7 +97,7 @@ export const { GET, POST } = createSponsorRoute({
 
 ```ts
 // app/api/sponsor-pubkey/route.ts
-import { createSponsorPubkeyRoute } from "@legion/gasless/server";
+import { createSponsorPubkeyRoute } from "gasless-sol/server";
 
 export const { GET } = createSponsorPubkeyRoute();
 ```
@@ -114,7 +114,7 @@ SPONSOR_PRIVATE_KEY=your_sponsor_wallet_private_key_base58
 
 ```tsx
 "use client";
-import { useGaslessTransaction } from "@legion/gasless/react";
+import { useGaslessTransaction } from "gasless-sol/react";
 // ... see React example above
 ```
 
@@ -125,7 +125,7 @@ import { useGaslessTransaction } from "@legion/gasless/react";
 If you need more control:
 
 ```ts
-import { LegionGasless } from "@legion/gasless";
+import { LegionGasless } from "gasless-sol";
 
 const legion = new LegionGasless(config);
 

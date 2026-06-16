@@ -18,7 +18,7 @@ import type {
  *
  * @example
  * ```tsx
- * import { useGaslessTransaction } from "@legion/gasless/react";
+ * import { useGaslessTransaction } from "gasless-sol/react";
  *
  * const LEGION_CONFIG = {
  *   gasless: {

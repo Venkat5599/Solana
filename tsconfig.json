@@ -16,9 +16,9 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
-      "@legion/gasless": ["./sdk/src/index.ts"],
-      "@legion/gasless/server": ["./sdk/src/server/index.ts"],
-      "@legion/gasless/react": ["./sdk/src/react/index.ts"]
+      "gasless-sol": ["./sdk/src/index.ts"],
+      "gasless-sol/server": ["./sdk/src/server/index.ts"],
+      "gasless-sol/react": ["./sdk/src/react/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

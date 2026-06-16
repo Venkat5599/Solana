@@ -1,4 +1,4 @@
-import { createSponsorRoute } from "@legion/gasless/server";
+import { createSponsorRoute } from "gasless-sol/server";
 import { LEGION_CONFIG } from "@/lib/solana";
 
 export const { GET, POST } = createSponsorRoute({

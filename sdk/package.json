@@ -1,22 +1,58 @@
 {
-  "name": "@legion/gasless",
+  "name": "gasless-sol",
   "version": "0.1.0",
-  "description": "SDK for gasless Solana transactions. Sponsor wallet covers SOL gas; users pay a small SPL token fee atomically.",
-  "keywords": ["solana", "gasless", "web3", "blockchain", "sdk", "usdc", "spl-token"],
+  "description": "SDK for gasless Solana transactions. A sponsor wallet covers SOL gas while users pay a small SPL-token (USDC) fee atomically — fee + tip in one transaction, zero SOL required for the user.",
+  "keywords": ["solana", "gasless", "web3", "blockchain", "sdk", "usdc", "spl-token", "sponsor", "account-abstraction"],
   "license": "MIT",
+  "author": "Venkat5599",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Venkat5599/Solana",
+    "directory": "sdk"
+  },
+  "homepage": "https://tipsol.tech",
   "type": "module",
-  "main": "./src/index.ts",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./server": "./src/server/index.ts",
-    "./react": "./src/react/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup",
+    "prepublishOnly": "tsup"
   },
   "peerDependencies": {
-    "@solana/web3.js": "^1.x",
     "@solana/spl-token": "^0.4.x",
+    "@solana/wallet-adapter-react": "^0.15.x",
+    "@solana/web3.js": "^1.x",
     "react": "^18.x"
+  },
+  "peerDependenciesMeta": {
+    "@solana/wallet-adapter-react": { "optional": true },
+    "react": { "optional": true }
   },
   "dependencies": {
     "bs58": "^6.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

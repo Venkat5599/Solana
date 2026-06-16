@@ -106,7 +106,7 @@ function errorJson(error: string, code: SponsorErrorCode, status: number) {
  * @example
  * ```ts
  * // app/api/sponsor/route.ts
- * import { createSponsorRoute } from "@legion/gasless/server";
+ * import { createSponsorRoute } from "gasless-sol/server";
  *
  * export const { GET, POST } = createSponsorRoute({
  *   privateKeyEnvVar: "SPONSOR_PRIVATE_KEY",
@@ -232,7 +232,7 @@ export function createSponsorRoute(config: SponsorRouteConfig = {}) {
  * @example
  * ```ts
  * // app/api/sponsor-pubkey/route.ts
- * import { createSponsorPubkeyRoute } from "@legion/gasless/server";
+ * import { createSponsorPubkeyRoute } from "gasless-sol/server";
  * export const { GET } = createSponsorPubkeyRoute();
  * ```
  */

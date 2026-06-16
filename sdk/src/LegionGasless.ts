@@ -33,7 +33,7 @@ const USDC_DECIMALS = 6;
  *
  * @example
  * ```ts
- * import { LegionGasless } from "@legion/gasless";
+ * import { LegionGasless } from "gasless-sol";
  *
  * const legion = new LegionGasless({
  *   gasless: {

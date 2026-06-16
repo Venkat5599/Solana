@@ -37,3 +37,6 @@ next-env.d.ts
 
 # devnet test keypair (contains a secret)
 .devnet-user.json
+
+# sdk build output
+sdk/dist/

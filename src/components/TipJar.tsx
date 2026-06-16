@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
 import { ExternalLink, AlertCircle, CheckCircle2 } from "lucide-react";
-import { useGaslessTransaction } from "@legion/gasless/react";
+import { useGaslessTransaction } from "gasless-sol/react";
 import { LEGION_CONFIG, explorerUrl, truncateAddress } from "@/lib/solana";
 import { isValidSolanaAddress, usdcToRaw } from "@/lib/utils";
 import { cn } from "@/lib/cn";
