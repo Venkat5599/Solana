@@ -32,13 +32,15 @@ A web application where creators share a tip jar link and fans send on-chain tip
 ## Features
 
 ### F1: Gasless Tip Sending
-Users send SOL tips without holding SOL. The Legion Gasless implementation builds an atomic transaction:
-- Instruction 0: USDC fee transfer (user → sponsor, $0.05 default)
-- Instruction 1: SOL tip transfer (user → creator/recipient)
+Users send USDC tips without holding any SOL. The Legion Gasless implementation builds an atomic transaction:
+- Instruction 0: create sponsor fee ATA (idempotent, sponsor pays rent)
+- Instruction 1: USDC fee transfer (user → sponsor, 0.05 USDC default)
+- Instruction 2: create recipient ATA (idempotent, sponsor pays rent)
+- Instruction 3: USDC tip transfer (user → creator/recipient)
 
-Both instructions succeed or both fail — protocol-level atomicity.
+The sponsor is `feePayer` and covers SOL network gas. Tip + fee are both paid in USDC, so the user needs **zero SOL**. All instructions succeed or all fail — protocol-level atomicity.
 
-**Acceptance:** User with 0 SOL and 1 USDC can send a 0.001 SOL tip. Transaction confirmed on-chain.
+**Acceptance:** User with 0 SOL and ≥0.05 USDC can send a USDC tip. Transaction confirmed on-chain. *(Verified on devnet 2026-06-16: tx `4CKHSqA5…P3FsKM`, user held 0 SOL throughout.)*
 
 ### F2: Shareable Tip Jar URL
 Creators share a URL containing their wallet address as a query parameter (`?to=<address>`). When a fan opens the link, the recipient field is pre-filled and locked.
@@ -90,7 +92,7 @@ A single environment variable (`NEXT_PUBLIC_SOLANA_NETWORK=devnet|mainnet-beta`)
 - Analytics dashboard
 - Mobile native app
 - Authentication / user accounts
-- Tip amounts in USDC (tips are denominated in SOL; fee is in USDC)
+- SOL-denominated tips (would require the user to hold SOL — defeats the gasless premise; tips are in USDC)
 
 ---
 

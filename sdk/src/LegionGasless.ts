@@ -2,7 +2,6 @@ import {
   Connection,
   PublicKey,
   Transaction,
-  SystemProgram,
 } from "@solana/web3.js";
 import {
   createTransferInstruction,
@@ -26,7 +25,11 @@ const USDC_DECIMALS = 6;
  * - `feePayer` = sponsor wallet (covers SOL network gas)
  * - instruction[0] = idempotent create of the sponsor's fee ATA
  * - instruction[1] = SPL token fee transfer: sender → sponsor
- * - instruction[2] = SOL tip transfer: sender → recipient
+ * - instruction[2] = idempotent create of the recipient's token ATA
+ * - instruction[3] = SPL token tip transfer: sender → recipient
+ *
+ * Both fee and tip are paid in the same SPL token (e.g. USDC), so the sender
+ * needs ZERO SOL — gas is sponsored, everything else is token.
  *
  * @example
  * ```ts
@@ -44,7 +47,7 @@ const USDC_DECIMALS = 6;
  *   sponsorPublicKey,
  *   senderPublicKey,
  *   recipientPublicKey,
- *   tipAmountLamports: 100_000,
+ *   tipAmountRaw: 1_000_000,
  * });
  *
  * const userSigned = await wallet.signTransaction(transaction);
@@ -89,7 +92,8 @@ export class LegionGasless {
    * feePayer: sponsorPublicKey          ← covers ~5000 lamports SOL gas
    * instruction[0]: create ATA (idem.)  ← ensures sponsor fee ATA exists
    * instruction[1]: SPL transfer        ← sender pays USDC fee to sponsor
-   * instruction[2]: System transfer     ← sender tips recipient in SOL
+   * instruction[2]: create ATA (idem.)  ← ensures recipient token ATA exists
+   * instruction[3]: SPL transfer        ← sender tips recipient in USDC
    * ```
    *
    * After calling this:
@@ -106,7 +110,7 @@ export class LegionGasless {
       sponsorPublicKey,
       senderPublicKey,
       recipientPublicKey,
-      tipAmountLamports,
+      tipAmountRaw,
       feeToken,
     } = params;
 
@@ -117,9 +121,10 @@ export class LegionGasless {
     // Fee in raw token units (USDC: 6 decimals)
     const feeAmountRaw = Math.round(feeConfig.amount * 10 ** USDC_DECIMALS);
 
-    const [senderAta, sponsorAta] = await Promise.all([
+    const [senderAta, sponsorAta, recipientAta] = await Promise.all([
       getAssociatedTokenAddress(mintPubkey, senderPublicKey, false, TOKEN_PROGRAM_ID),
       getAssociatedTokenAddress(mintPubkey, sponsorPublicKey, false, TOKEN_PROGRAM_ID),
+      getAssociatedTokenAddress(mintPubkey, recipientPublicKey, false, TOKEN_PROGRAM_ID),
     ]);
 
     const { blockhash, lastValidBlockHeight } =
@@ -156,13 +161,31 @@ export class LegionGasless {
       )
     );
 
-    // instruction[2]: SOL tip — sender → recipient
+    // instruction[2]: ensure the recipient's token ATA exists (idempotent).
+    // Sponsor pays the rent so the fan never needs SOL — even to tip a brand
+    // new creator who has never received this token before.
     tx.add(
-      SystemProgram.transfer({
-        fromPubkey: senderPublicKey,
-        toPubkey: recipientPublicKey,
-        lamports: tipAmountLamports,
-      })
+      createAssociatedTokenAccountIdempotentInstruction(
+        sponsorPublicKey, // payer (feePayer covers rent)
+        recipientAta,
+        recipientPublicKey, // owner
+        mintPubkey,
+        TOKEN_PROGRAM_ID
+      )
+    );
+
+    // instruction[3]: the tip itself — SPL token transfer sender → recipient.
+    // Denominated in the same token as the fee (USDC), so the fan needs ZERO
+    // SOL: gas is sponsored, fee + tip are both paid in token.
+    tx.add(
+      createTransferInstruction(
+        senderAta,
+        recipientAta,
+        senderPublicKey,
+        tipAmountRaw,
+        [],
+        TOKEN_PROGRAM_ID
+      )
     );
 
     return {

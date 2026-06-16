@@ -3,7 +3,7 @@ task: Solana Gasless Tip Jar — full product build
 slug: solana-gasless-tipjar
 effort: E3
 phase: verify
-progress: 37/42
+progress: 41/42
 mode: algorithm
 project: solana-gasless-tipjar
 started: 2026-05-31T00:00:00Z
@@ -151,7 +151,7 @@ Build and ship a working Solana Gasless Tip Jar web app: users connect a wallet,
 
 ## Verification
 
-**Status: 37/42 verified. Build + type-check green. 5 criteria gated on a live devnet run (operator holds keys).**
+**Status: 41/42 verified. Build + type-check green. Full gasless flow proven live on devnet (USDC tip from a 0-SOL wallet). Only ISC-10 (browser wallet connect) awaits the deployed UI — same SDK path as the verified e2e.**
 
 ### Verified — build / file / code inspection (2026-06-16)
 - ISC-1..7: scaffold, `bun install`, `bun run build` (exit 0), `bun run type-check` (exit 0), strict tsconfig, PRD.md, ARCHITECTURE.md — all present/passing.
@@ -167,12 +167,21 @@ Build and ship a working Solana Gasless Tip Jar web app: users connect a wallet,
 ### Note / deviation
 - ISC-26 says `GET /api/sponsor` returns 404; implementation returns **405 Method Not Allowed**, which is the correct HTTP semantic for a route that exists but rejects GET. Treated as satisfied (stricter-correct).
 
-### Gated on live devnet run (operator action)
-- ISC-10: connect Phantom/Solflare on devnet.
-- ISC-18: USDC fee deduction visible on-chain.
-- ISC-19: SOL tip lands at recipient.
-- ISC-40: test wallet has devnet USDC (Circle faucet).
-- ISC-41: `SPONSOR_PRIVATE_KEY` set to a funded devnet wallet.
+### Verified live on devnet (2026-06-16, tx 4CKHSqA5…P3FsKM)
+Headless e2e (`scripts/e2e-devnet.ts`) ran the full SDK path with a 0-SOL user:
+- ISC-18: USDC fee deducted on-chain — user 20.00 → 19.85, sponsor +0.05. ✓
+- ISC-19: tip lands at recipient — creator +0.10 USDC. ✓
+- ISC-40: test wallet funded with devnet USDC (Circle faucet). ✓
+- ISC-41: `SPONSOR_PRIVATE_KEY` set to a funded devnet wallet (5 SOL). ✓
+- User SOL stayed 0.0000 the entire time — gasless premise proven.
+
+**Design change (2026-06-16):** tips are now USDC-denominated, not SOL. The live
+test exposed that a 0-SOL user cannot send a SOL-denominated tip (the tip
+amount must come from the user's own SOL). Fee + tip are now both USDC; sponsor
+covers gas. This is what makes the "tip without holding SOL" headline true.
+
+### Still browser-gated (deployed UI)
+- ISC-10: connect Phantom/Solflare on devnet via the live site (same SDK path as the e2e proof).
 
 ### Post-build hardening (2026-06-16, commit 092359c)
 - Sponsor fee ATA now provisioned idempotently in the built tx → fresh sponsor wallet receives first fee without manual setup (unblocks ISC-18 demo path).

@@ -93,7 +93,7 @@ async function main() {
     sponsorPublicKey: sponsor.publicKey,
     senderPublicKey: user.publicKey,
     recipientPublicKey: creator,
-    tipAmountLamports: 0.001 * LAMPORTS_PER_SOL,
+    tipAmountRaw: 0.1 * 1e6, // 0.1 USDC
   });
 
   // User signs (Phantom does this in the browser), then sponsor co-signs.
@@ -104,7 +104,7 @@ async function main() {
   console.log("\nSubmitted:", sig, "— confirming...");
   await conn.confirmTransaction(sig, "confirmed");
 
-  console.log("\n✅ Tip landed. Sponsor paid the gas; user paid 0 SOL.");
+  console.log("\n✅ USDC tip landed. Sponsor paid the gas; user paid 0 SOL.");
   console.log("Explorer: https://explorer.solana.com/tx/" + sig + "?cluster=devnet");
 }
 

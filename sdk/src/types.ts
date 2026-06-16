@@ -42,10 +42,10 @@ export interface BuildGaslessTxParams {
   sponsorPublicKey: PublicKey;
   /** Wallet that is sending the tip and paying the USDC fee */
   senderPublicKey: PublicKey;
-  /** Wallet that receives the SOL tip */
+  /** Wallet that receives the token tip */
   recipientPublicKey: PublicKey;
-  /** Tip amount in lamports (1 SOL = 1_000_000_000 lamports) */
-  tipAmountLamports: number;
+  /** Tip amount in raw token units (USDC: 1_000_000 = 1 USDC) */
+  tipAmountRaw: number;
   /** Override the default fee token. Must exist in config.gasless.fees */
   feeToken?: string;
 }
@@ -106,7 +106,8 @@ export interface UseGaslessTransactionResult {
 
 export interface SendGaslessTipParams {
   recipientAddress: string;
-  tipAmountLamports: number;
+  /** Tip amount in raw token units (USDC: 1_000_000 = 1 USDC) */
+  tipAmountRaw: number;
   feeToken?: string;
   /** URL of the sponsor API endpoint. Default: "/api/sponsor" */
   sponsorApiUrl?: string;
@@ -132,6 +133,6 @@ export interface SponsorRouteConfig {
    * Strongly recommended in production.
    */
   feeConfig?: LegionGaslessConfig;
-  /** Max instructions allowed in a sponsored tx. Default: 4 (ATA + fee + tip + slack). */
+  /** Max instructions allowed in a sponsored tx. Default: 6 (2 ATAs + fee + tip + slack). */
   maxInstructions?: number;
 }

@@ -33,7 +33,7 @@ import type {
  *   return (
  *     <button
  *       onClick={() =>
- *         sendGaslessTip({ recipientAddress: recipient, tipAmountLamports: 100_000 })
+ *         sendGaslessTip({ recipientAddress: recipient, tipAmountRaw: 1_000_000 })
  *       }
  *       disabled={status !== "idle"}
  *     >
@@ -63,7 +63,7 @@ export function useGaslessTransaction(
     async (params: SendGaslessTipParams): Promise<string | null> => {
       const {
         recipientAddress,
-        tipAmountLamports,
+        tipAmountRaw,
         feeToken,
         sponsorApiUrl = "/api/sponsor",
         sponsorPubkeyUrl = "/api/sponsor-pubkey",
@@ -89,7 +89,7 @@ export function useGaslessTransaction(
           sponsorPublicKey: new PublicKey(sponsorPkStr),
           senderPublicKey: publicKey,
           recipientPublicKey: new PublicKey(recipientAddress),
-          tipAmountLamports,
+          tipAmountRaw,
           feeToken,
         });
 

@@ -129,7 +129,7 @@ export function createSponsorRoute(config: SponsorRouteConfig = {}) {
     rateLimit = 10,
     minSolBalance = 0.01,
     feeConfig,
-    maxInstructions = 4,
+    maxInstructions = 6,
   } = config;
 
   const GET = async () =>

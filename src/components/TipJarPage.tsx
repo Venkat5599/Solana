@@ -104,8 +104,8 @@ export function TipJarPage() {
 
             {/* Sub */}
             <p className="text-[clamp(15px,2vw,18px)] text-[#555] leading-relaxed max-w-lg mb-10">
-              Send on-chain SOL tips using only USDC. The sponsor wallet covers
-              Solana gas fees atomically — no exchange, no friction.
+              Send on-chain USDC tips with zero SOL in your wallet. The sponsor
+              wallet covers Solana gas atomically — no exchange, no friction.
             </p>
 
             {/* Feature tags */}
@@ -141,8 +141,8 @@ export function TipJarPage() {
                   <ol className="space-y-4">
                     {[
                       ["Connect wallet", "Phantom or Solflare — no SOL needed"],
-                      ["Enter tip amount", "In SOL, any value above 0"],
-                      ["Sign once", "Wallet prompts for USDC fee approval"],
+                      ["Enter tip amount", "In USDC, any value above 0"],
+                      ["Sign once", "Wallet prompts for USDC fee + tip approval"],
                       ["Confirmed", "On-chain in ~2 seconds on Solana"],
                     ].map(([step, desc], i) => (
                       <li key={step} className="flex gap-4">

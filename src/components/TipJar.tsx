@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { ExternalLink, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useGaslessTransaction } from "@legion/gasless/react";
 import { LEGION_CONFIG, explorerUrl, truncateAddress } from "@/lib/solana";
-import { isValidSolanaAddress, solToLamports } from "@/lib/utils";
+import { isValidSolanaAddress, usdcToRaw } from "@/lib/utils";
 import { cn } from "@/lib/cn";
 
-const QUICK_AMOUNTS = ["0.001", "0.01", "0.1", "1"];
+const QUICK_AMOUNTS = ["0.5", "1", "5", "10"];
 
 const STATUS_LABELS: Record<string, string> = {
   building:   "Building transaction...",
@@ -29,7 +29,7 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
     useGaslessTransaction(LEGION_CONFIG);
 
   const [recipient, setRecipient] = useState(prefillRecipient ?? "");
-  const [amountSol, setAmountSol] = useState("");
+  const [amountUsdc, setAmountUsdc] = useState("");
 
   useEffect(() => {
     if (prefillRecipient) setRecipient(prefillRecipient);
@@ -62,14 +62,14 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
         </span>,
         { icon: <CheckCircle2 className="w-4 h-4" />, duration: 8000 }
       );
-      setAmountSol("");
+      setAmountUsdc("");
     }
   }, [status, signature]);
 
   const touched = recipient.length > 0;
   const recipientValid = isValidSolanaAddress(recipient);
   const recipientError = touched && !recipientValid;
-  const amount = parseFloat(amountSol);
+  const amount = parseFloat(amountUsdc);
   const amountValid = !isNaN(amount) && amount > 0;
   const canSend = connected && recipientValid && amountValid && !isLoading;
 
@@ -77,7 +77,7 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
     if (!canSend) return;
     await sendGaslessTip({
       recipientAddress: recipient,
-      tipAmountLamports: solToLamports(amount),
+      tipAmountRaw: usdcToRaw(amount),
     });
   };
 
@@ -142,19 +142,19 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
           <div className="relative">
             <input
               type="number"
-              value={amountSol}
-              onChange={(e) => setAmountSol(e.target.value)}
+              value={amountUsdc}
+              onChange={(e) => setAmountUsdc(e.target.value)}
               disabled={isLoading}
-              placeholder="0.001"
+              placeholder="1.00"
               min="0.000001"
-              step="0.001"
+              step="0.01"
               className="w-full bg-[#fafafa] border border-[#e8e8e8] rounded-lg px-4 py-3 text-sm font-mono text-black placeholder-[#ccc] outline-none focus:border-black focus:ring-2 focus:ring-black/5 transition-all duration-150 pr-14 disabled:opacity-50"
             />
             <span
               className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#999]"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              SOL
+              USDC
             </span>
           </div>
 
@@ -162,11 +162,11 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
             {QUICK_AMOUNTS.map((val) => (
               <button
                 key={val}
-                onClick={() => setAmountSol(val)}
+                onClick={() => setAmountUsdc(val)}
                 disabled={isLoading}
                 className={cn(
                   "flex-1 py-1.5 text-xs rounded-lg border transition-colors duration-150 font-mono",
-                  amountSol === val
+                  amountUsdc === val
                     ? "bg-black text-white border-black"
                     : "bg-white text-[#888] border-[#e8e8e8] hover:border-black hover:text-black"
                 )}
@@ -181,9 +181,10 @@ export function TipJar({ prefillRecipient }: TipJarProps) {
         {amountValid && (
           <div className="bg-[#fafafa] border border-[#f0f0f0] rounded-xl p-4 space-y-2">
             {[
-              ["Tip amount", `${amount} SOL`],
-              ["Gasless fee (USDC)", "$0.05"],
+              ["Tip amount", `${amount} USDC`],
+              ["Gasless fee", "0.05 USDC"],
               ["SOL gas", "Free (sponsored)"],
+              ["Total", `${(amount + 0.05).toFixed(2)} USDC`],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between">
                 <span className="text-xs text-[#999]">{k}</span>

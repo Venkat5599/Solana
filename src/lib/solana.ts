@@ -1,5 +1,5 @@
 import { Connection } from "@solana/web3.js";
-import type { LegionGaslessConfig } from "./legion-gasless";
+import type { LegionGaslessConfig } from "@legion/gasless";
 
 const RPC_URLS: Record<string, string> = {
   devnet: "https://api.devnet.solana.com",

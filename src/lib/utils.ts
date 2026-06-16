@@ -13,6 +13,13 @@ export function solToLamports(sol: number): number {
   return Math.round(sol * LAMPORTS_PER_SOL);
 }
 
+const USDC_DECIMALS = 6;
+
+/** Convert a human USDC amount (e.g. 1.5) to raw token units (1_500_000). */
+export function usdcToRaw(usdc: number): number {
+  return Math.round(usdc * 10 ** USDC_DECIMALS);
+}
+
 export function lamportsToSol(lamports: number): number {
   return lamports / LAMPORTS_PER_SOL;
 }

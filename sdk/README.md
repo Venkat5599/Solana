@@ -63,7 +63,7 @@ function TipButton({ recipient }: { recipient: string }) {
       onClick={() =>
         sendGaslessTip({
           recipientAddress: recipient,
-          tipAmountLamports: 100_000, // 0.0001 SOL
+          tipAmountRaw: 1_000_000, // 1 USDC
         })
       }
       disabled={status !== "idle"}
@@ -135,7 +135,7 @@ const { transaction, expiresAt } = await legion.buildGaslessTipTransaction({
   sponsorPublicKey,   // feePayer — covers SOL gas
   senderPublicKey,    // pays USDC fee + sends SOL tip
   recipientPublicKey, // receives SOL tip
-  tipAmountLamports: 100_000,
+  tipAmountRaw: 1_000_000,
   feeToken: "USDC",  // optional, defaults to config.gasless.defaultFeeToken
 });
 
