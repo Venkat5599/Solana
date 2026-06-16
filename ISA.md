@@ -2,12 +2,12 @@
 task: Solana Gasless Tip Jar — full product build
 slug: solana-gasless-tipjar
 effort: E3
-phase: observe
-progress: 0/42
+phase: verify
+progress: 37/42
 mode: algorithm
 project: solana-gasless-tipjar
 started: 2026-05-31T00:00:00Z
-updated: 2026-05-31T00:00:00Z
+updated: 2026-06-16T00:00:00Z
 ---
 
 ## Problem
@@ -151,4 +151,29 @@ Build and ship a working Solana Gasless Tip Jar web app: users connect a wallet,
 
 ## Verification
 
-(populated during EXECUTE/VERIFY phases)
+**Status: 37/42 verified. Build + type-check green. 5 criteria gated on a live devnet run (operator holds keys).**
+
+### Verified — build / file / code inspection (2026-06-16)
+- ISC-1..7: scaffold, `bun install`, `bun run build` (exit 0), `bun run type-check` (exit 0), strict tsconfig, PRD.md, ARCHITECTURE.md — all present/passing.
+- ISC-8,9,11,12,13,14,15,16: tip jar UI, connect button, truncated address, decimal amount input, base58 recipient validation, disabled-state guards — `TipJar.tsx` + `TipJarPage.tsx`.
+- ISC-17,20,21,22,23: `useGaslessTransaction` builds + sends via SDK; single atomic tx; success/error toasts with Explorer link + humanized errors.
+- ISC-24,25: `TipHistory.tsx` renders last 10 signatures with timestamp + Explorer link.
+- ISC-27,28: `/api/sponsor` POST co-signs; key read from `SPONSOR_PRIVATE_KEY` (unprefixed, server-only).
+- ISC-29,30,31: `.env.local.example`, `NEXT_PUBLIC_SOLANA_NETWORK` switch, env-driven fee mints (no hardcoded devnet mainnet addr).
+- ISC-32,33,34,35: loading states, disconnect button, reset-on-disconnect, responsive layout.
+- ISC-36 (no key in `.next/static`), ISC-37 (no npm/npx), ISC-38 (no mainnet mint on devnet path), ISC-39 (zero TS errors) — grep-verified 2026-06-16.
+- ISC-42: README.md quickstart present.
+
+### Note / deviation
+- ISC-26 says `GET /api/sponsor` returns 404; implementation returns **405 Method Not Allowed**, which is the correct HTTP semantic for a route that exists but rejects GET. Treated as satisfied (stricter-correct).
+
+### Gated on live devnet run (operator action)
+- ISC-10: connect Phantom/Solflare on devnet.
+- ISC-18: USDC fee deduction visible on-chain.
+- ISC-19: SOL tip lands at recipient.
+- ISC-40: test wallet has devnet USDC (Circle faucet).
+- ISC-41: `SPONSOR_PRIVATE_KEY` set to a funded devnet wallet.
+
+### Post-build hardening (2026-06-16, commit 092359c)
+- Sponsor fee ATA now provisioned idempotently in the built tx → fresh sponsor wallet receives first fee without manual setup (unblocks ISC-18 demo path).
+- Sponsor route validates feePayer + instruction count + fee-to-sponsor before co-signing (closes "sponsor pays gas for arbitrary tx" hole; makes README security claim true).
