@@ -2,8 +2,8 @@
 task: Solana Gasless Tip Jar — full product build
 slug: solana-gasless-tipjar
 effort: E3
-phase: verify
-progress: 41/42
+phase: complete
+progress: 42/42
 mode: algorithm
 project: solana-gasless-tipjar
 started: 2026-05-31T00:00:00Z
@@ -151,7 +151,7 @@ Build and ship a working Solana Gasless Tip Jar web app: users connect a wallet,
 
 ## Verification
 
-**Status: 41/42 verified. Build + type-check green. Full gasless flow proven live on devnet (USDC tip from a 0-SOL wallet). Only ISC-10 (browser wallet connect) awaits the deployed UI — same SDK path as the verified e2e.**
+**Status: 42/42 COMPLETE. Build + type-check green. Full gasless flow proven end-to-end in the browser on the live deployment (Phantom, devnet, 0-SOL wallet → 0.5 USDC tip, sponsor paid gas). Shipped at https://tipsol.tech.**
 
 ### Verified — build / file / code inspection (2026-06-16)
 - ISC-1..7: scaffold, `bun install`, `bun run build` (exit 0), `bun run type-check` (exit 0), strict tsconfig, PRD.md, ARCHITECTURE.md — all present/passing.
@@ -180,8 +180,15 @@ test exposed that a 0-SOL user cannot send a SOL-denominated tip (the tip
 amount must come from the user's own SOL). Fee + tip are now both USDC; sponsor
 covers gas. This is what makes the "tip without holding SOL" headline true.
 
-### Still browser-gated (deployed UI)
-- ISC-10: connect Phantom/Solflare on devnet via the live site (same SDK path as the e2e proof).
+### Verified in browser on live deployment (2026-06-16)
+- ISC-10: connected Phantom (devnet) on https://tipsol.tech, sent a 0.5 USDC tip
+  from a 0-SOL wallet. Tx `4Zm3QMXMHymT3pxg…UdkCWsNrs8` — Status: Success,
+  Fee payer: sponsor `BsP3…RrNhtn` (sponsor paid the 0.000085 SOL gas). Full
+  product flow proven end-to-end on the deployed site. 42/42 complete.
+
+### Shipped
+- Live: https://tipsol.tech (custom domain, Vercel, HTTPS auto-issued) + https://solana-venkat5599s-projects.vercel.app
+- Repo: https://github.com/Venkat5599/Solana (public)
 
 ### Post-build hardening (2026-06-16, commit 092359c)
 - Sponsor fee ATA now provisioned idempotently in the built tx → fresh sponsor wallet receives first fee without manual setup (unblocks ISC-18 demo path).
