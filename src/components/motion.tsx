@@ -40,8 +40,13 @@ export function ClipLine({
   delay?: number;
   className?: string;
 }) {
+  // paddingBottom leaves room for descenders (g, p, y) that the clip would
+  // otherwise crop; the matching negative margin keeps line spacing unchanged.
   return (
-    <span className="block clip-reveal">
+    <span
+      className="block clip-reveal"
+      style={{ paddingBottom: "0.16em", marginBottom: "-0.16em" }}
+    >
       <motion.span
         className={`block ${className ?? ""}`}
         initial={{ y: "110%" }}

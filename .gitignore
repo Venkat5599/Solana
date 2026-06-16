@@ -40,3 +40,7 @@ next-env.d.ts
 
 # sdk build output
 sdk/dist/
+
+# playwright artifacts
+.playwright-mcp/
+*.png
