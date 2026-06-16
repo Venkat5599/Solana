@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Copy, Check, ArrowUpRight } from "lucide-react";
 import { TipJar } from "./TipJar";
 import { TipHistory } from "./TipHistory";
@@ -139,6 +140,13 @@ export function TipJarPage() {
 
               {/* buttons */}
               <div className="flex items-center gap-2">
+                <Link
+                  href="/docs"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0a0a0a] text-white px-5 py-3 text-sm hover:opacity-90 transition-opacity duration-150"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  Read the docs →
+                </Link>
                 <a
                   href={NPM_URL}
                   target="_blank"
@@ -281,16 +289,19 @@ export function TipJarPage() {
         <footer className="border-t border-[#f0f0f0] px-5 sm:px-8 py-6">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-xs text-[#bbb]">
-              Built for Superteam Earn · Legion Gasless Protocol on Solana
+              Built for Superteam Earn · gasless-sol — gasless payments on Solana
             </p>
-            <a
-              href="https://github.com/Venkat5599/Solana"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-[#bbb] hover:text-black transition-colors underline underline-offset-2"
-            >
-              github.com/Venkat5599/Solana
-            </a>
+            <div className="flex items-center gap-4">
+              <Link href="/docs" className="text-xs text-[#bbb] hover:text-black transition-colors underline underline-offset-2">
+                Docs
+              </Link>
+              <a href="https://www.npmjs.com/package/gasless-sol" target="_blank" rel="noopener noreferrer" className="text-xs text-[#bbb] hover:text-black transition-colors underline underline-offset-2">
+                npm
+              </a>
+              <a href="https://github.com/Venkat5599/Solana" target="_blank" rel="noopener noreferrer" className="text-xs text-[#bbb] hover:text-black transition-colors underline underline-offset-2">
+                GitHub
+              </a>
+            </div>
           </div>
         </footer>
       </main>
