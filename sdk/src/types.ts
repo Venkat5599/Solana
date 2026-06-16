@@ -125,4 +125,13 @@ export interface SponsorRouteConfig {
   rateLimit?: number;
   /** Minimum sponsor SOL balance to accept requests (SOL). Default: 0.01 */
   minSolBalance?: number;
+  /**
+   * Fee config the client builds against. When provided, the route REJECTS any
+   * transaction that does not pay the expected fee to the sponsor — this is what
+   * stops the sponsor from co-signing (and paying gas for) arbitrary transactions.
+   * Strongly recommended in production.
+   */
+  feeConfig?: LegionGaslessConfig;
+  /** Max instructions allowed in a sponsored tx. Default: 4 (ATA + fee + tip + slack). */
+  maxInstructions?: number;
 }

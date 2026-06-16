@@ -6,6 +6,7 @@ import {
 } from "@solana/web3.js";
 import {
   createTransferInstruction,
+  createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -23,8 +24,9 @@ const USDC_DECIMALS = 6;
  *
  * Constructs atomic Solana transactions where:
  * - `feePayer` = sponsor wallet (covers SOL network gas)
- * - instruction[0] = SPL token fee transfer: sender → sponsor
- * - instruction[1] = SOL tip transfer: sender → recipient
+ * - instruction[0] = idempotent create of the sponsor's fee ATA
+ * - instruction[1] = SPL token fee transfer: sender → sponsor
+ * - instruction[2] = SOL tip transfer: sender → recipient
  *
  * @example
  * ```ts
@@ -85,8 +87,9 @@ export class LegionGasless {
    * Transaction anatomy:
    * ```
    * feePayer: sponsorPublicKey          ← covers ~5000 lamports SOL gas
-   * instruction[0]: SPL transfer        ← sender pays USDC fee to sponsor
-   * instruction[1]: System transfer     ← sender tips recipient in SOL
+   * instruction[0]: create ATA (idem.)  ← ensures sponsor fee ATA exists
+   * instruction[1]: SPL transfer        ← sender pays USDC fee to sponsor
+   * instruction[2]: System transfer     ← sender tips recipient in SOL
    * ```
    *
    * After calling this:
@@ -127,7 +130,21 @@ export class LegionGasless {
       feePayer: sponsorPublicKey,
     });
 
-    // instruction[0]: USDC fee — sender → sponsor
+    // instruction[0]: ensure the sponsor's fee ATA exists (idempotent no-op if
+    // already created). Sponsor is feePayer, so the sponsor pays the rent — a
+    // fresh sponsor wallet can still receive the very first fee without a
+    // manual setup step.
+    tx.add(
+      createAssociatedTokenAccountIdempotentInstruction(
+        sponsorPublicKey, // payer (feePayer covers rent)
+        sponsorAta,
+        sponsorPublicKey, // owner
+        mintPubkey,
+        TOKEN_PROGRAM_ID
+      )
+    );
+
+    // instruction[1]: USDC fee — sender → sponsor
     tx.add(
       createTransferInstruction(
         senderAta,
@@ -139,7 +156,7 @@ export class LegionGasless {
       )
     );
 
-    // instruction[1]: SOL tip — sender → recipient
+    // instruction[2]: SOL tip — sender → recipient
     tx.add(
       SystemProgram.transfer({
         fromPubkey: senderPublicKey,

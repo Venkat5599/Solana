@@ -2,11 +2,85 @@ import {
   Keypair,
   Transaction,
   Connection,
-  clusterApiUrl,
+  PublicKey,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
+import {
+  decodeTransferInstruction,
+  getAssociatedTokenAddress,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import bs58 from "bs58";
-import type { SponsorRouteConfig, SponsorErrorCode } from "../types";
+import type {
+  SponsorRouteConfig,
+  SponsorErrorCode,
+  LegionGaslessConfig,
+} from "../types";
+
+// SPL token decimals assumed for fee amounts (USDC/USDT both 6).
+const FEE_DECIMALS = 6;
+
+// Direct RPC endpoints (clusterApiUrl pulls in browser-incompatible deps under
+// some bundlers; the rest of the app uses these same URLs).
+const RPC_URLS: Record<string, string> = {
+  devnet: "https://api.devnet.solana.com",
+  "mainnet-beta": "https://api.mainnet-beta.solana.com",
+};
+
+/**
+ * Validates that a transaction is a legitimate gasless tip the sponsor should
+ * pay for: the sponsor is the feePayer, the instruction count is bounded, and
+ * the tx pays at least the configured fee into the sponsor's own token account.
+ *
+ * Returns an error string if the tx must be rejected, or null if it is valid.
+ */
+async function validateSponsoredTx(
+  tx: Transaction,
+  sponsorPk: PublicKey,
+  feeConfig: LegionGaslessConfig,
+  maxInstructions: number
+): Promise<string | null> {
+  if (!tx.feePayer || !tx.feePayer.equals(sponsorPk)) {
+    return "feePayer must be the sponsor wallet";
+  }
+  if (tx.instructions.length === 0 || tx.instructions.length > maxInstructions) {
+    return "unexpected instruction count";
+  }
+
+  for (const fee of feeConfig.gasless.fees) {
+    let mint: PublicKey;
+    try {
+      mint = new PublicKey(fee.mintAddress);
+    } catch {
+      continue;
+    }
+    const sponsorAta = await getAssociatedTokenAddress(
+      mint,
+      sponsorPk,
+      false,
+      TOKEN_PROGRAM_ID
+    );
+    const minRaw = BigInt(Math.round(fee.amount * 10 ** FEE_DECIMALS));
+
+    for (const ix of tx.instructions) {
+      if (!ix.programId.equals(TOKEN_PROGRAM_ID)) continue;
+      let decoded;
+      try {
+        decoded = decodeTransferInstruction(ix, TOKEN_PROGRAM_ID);
+      } catch {
+        continue;
+      }
+      if (
+        decoded.keys.destination.pubkey.equals(sponsorAta) &&
+        decoded.data.amount >= minRaw
+      ) {
+        return null; // a valid fee payment to the sponsor was found
+      }
+    }
+  }
+
+  return "transaction does not pay the required sponsor fee";
+}
 
 // Simple in-process rate limiter (resets on server restart)
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
@@ -54,6 +128,8 @@ export function createSponsorRoute(config: SponsorRouteConfig = {}) {
     privateKeyEnvVar = "SPONSOR_PRIVATE_KEY",
     rateLimit = 10,
     minSolBalance = 0.01,
+    feeConfig,
+    maxInstructions = 4,
   } = config;
 
   const GET = async () =>
@@ -87,7 +163,10 @@ export function createSponsorRoute(config: SponsorRouteConfig = {}) {
       config.network ??
       ((process.env.NEXT_PUBLIC_SOLANA_NETWORK as "devnet" | "mainnet-beta") ??
         "devnet");
-    const connection = new Connection(clusterApiUrl(network), "confirmed");
+    const connection = new Connection(
+      RPC_URLS[network] ?? RPC_URLS.devnet,
+      "confirmed"
+    );
     const balance = await connection.getBalance(sponsorKeypair.publicKey);
 
     if (balance < minSolBalance * LAMPORTS_PER_SOL) {
@@ -116,6 +195,20 @@ export function createSponsorRoute(config: SponsorRouteConfig = {}) {
       tx = Transaction.from(Buffer.from(body.transaction, "base64"));
     } catch {
       return errorJson("Could not deserialize transaction.", "INVALID_TRANSACTION", 400);
+    }
+
+    // Validate the tx actually pays the sponsor before co-signing. Without this,
+    // the sponsor would pay SOL gas for ANY transaction submitted to the route.
+    if (feeConfig) {
+      const reason = await validateSponsoredTx(
+        tx,
+        sponsorKeypair.publicKey,
+        feeConfig,
+        maxInstructions
+      );
+      if (reason) {
+        return errorJson(`Refused to sponsor: ${reason}.`, "INVALID_TRANSACTION", 400);
+      }
     }
 
     try {
