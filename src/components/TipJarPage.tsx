@@ -7,8 +7,20 @@ import Link from "next/link";
 import { Copy, Check, ArrowUpRight } from "lucide-react";
 import { TipJar } from "./TipJar";
 import { TipHistory } from "./TipHistory";
+import { Reveal, ClipLine, Magnetic, Marquee, motion } from "./motion";
 import { truncateAddress, SOLANA_NETWORK } from "@/lib/solana";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+
+const MARQUEE_WORDS = [
+  "Gasless",
+  "Zero SOL",
+  "USDC fee",
+  "Sponsor pays gas",
+  "Atomic",
+  "On-chain",
+  "One line",
+  "TypeScript",
+];
 
 const INSTALL_CMD = "bun add gasless-sol";
 const NPM_URL = "https://www.npmjs.com/package/gasless-sol";
@@ -30,7 +42,6 @@ export function TipJarPage() {
   const prefillRecipient = searchParams.get("to") ?? undefined;
   const { publicKey, connected } = useWallet();
 
-  const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [cmdCopied, setCmdCopied] = useState(false);
 
@@ -40,11 +51,6 @@ export function TipJarPage() {
       setTimeout(() => setCmdCopied(false), 2000);
     });
   };
-
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 80);
-    return () => clearTimeout(t);
-  }, []);
 
   const tipJarUrl =
     typeof window !== "undefined" && publicKey
@@ -61,6 +67,7 @@ export function TipJarPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <div className="grain" aria-hidden />
 
       {/* ── Navbar ──────────────────────────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 z-10 bg-white border-b border-[#f0f0f0]">
@@ -91,99 +98,112 @@ export function TipJarPage() {
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <main className="flex-1 pt-14">
         <section className="max-w-5xl mx-auto px-5 sm:px-8 pt-20 pb-16">
-          <div
-            style={{
-              opacity: visible ? 1 : 0,
-              transform: visible ? "translateY(0)" : "translateY(12px)",
-              transition: "opacity 0.5s ease, transform 0.5s ease",
-            }}
-          >
+          <div>
             {/* Label */}
-            <p
+            <motion.p
               className="text-[13px] tracking-widest uppercase text-[#999] mb-6 select-none"
               style={{ letterSpacing: "0.12em" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
             >
               Solana · Gasless Protocol
-            </p>
+            </motion.p>
 
-            {/* Headline */}
+            {/* Headline — kinetic line clip */}
             <h1
-              className="text-[clamp(42px,8vw,96px)] leading-[0.95] tracking-tight text-black mb-8 max-w-3xl"
+              className="text-[clamp(42px,8.5vw,104px)] leading-[0.92] tracking-tight text-black mb-8 max-w-3xl"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Tip without
-              <br />
-              <span className="text-[#999]">holding SOL.</span>
+              <ClipLine delay={0.05}>Tip without</ClipLine>
+              <ClipLine delay={0.16} className="text-[#999]">holding SOL.</ClipLine>
             </h1>
 
             {/* Sub */}
-            <p className="text-[clamp(15px,2vw,18px)] text-[#555] leading-relaxed max-w-lg mb-8">
-              The open-source SDK powering gasless Solana payments. Sponsor wallet
-              covers gas, users pay in USDC — fee and tip in one atomic transaction.
-              Drop it into any app in one line.
-            </p>
+            <Reveal delay={0.28} y={16}>
+              <p className="text-[clamp(15px,2vw,18px)] text-[#555] leading-relaxed max-w-lg mb-8">
+                The open-source SDK powering gasless Solana payments. Sponsor wallet
+                covers gas, users pay in USDC — fee and tip in one atomic transaction.
+                Drop it into any app in one line.
+              </p>
+            </Reveal>
 
             {/* Install + CTA */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-10">
-              {/* install command pill */}
-              <button
-                onClick={copyCmd}
-                aria-label="Copy install command"
-                className="group inline-flex items-center gap-3 bg-[#0a0a0a] text-white rounded-full pl-5 pr-4 py-3 transition-opacity duration-150 hover:opacity-90"
-              >
-                <span className="text-[#666] font-mono text-sm select-none">$</span>
-                <span className="font-mono text-sm tracking-tight">{INSTALL_CMD}</span>
-                <span className="ml-1 text-[#888] group-hover:text-white transition-colors">
-                  {cmdCopied ? <Check className="w-4 h-4 text-[#4ade80]" /> : <Copy className="w-4 h-4" />}
-                </span>
-              </button>
+            <Reveal delay={0.38} y={16}>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-9">
+                {/* install command pill */}
+                <Magnetic>
+                  <button
+                    onClick={copyCmd}
+                    aria-label="Copy install command"
+                    className="group inline-flex items-center gap-3 bg-[#0a0a0a] text-white rounded-full pl-5 pr-4 py-3 transition-opacity duration-150 hover:opacity-90"
+                  >
+                    <span className="text-[#666] font-mono text-sm select-none">$</span>
+                    <span className="font-mono text-sm tracking-tight">{INSTALL_CMD}</span>
+                    <span className="ml-1 text-[#888] group-hover:text-white transition-colors">
+                      {cmdCopied ? <Check className="w-4 h-4 text-[#4ade80]" /> : <Copy className="w-4 h-4" />}
+                    </span>
+                  </button>
+                </Magnetic>
 
-              {/* buttons */}
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/docs"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0a0a0a] text-white px-5 py-3 text-sm hover:opacity-90 transition-opacity duration-150"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  Read the docs →
-                </Link>
-                <a
-                  href={NPM_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#e0e0e0] px-5 py-3 text-sm text-black hover:border-black transition-colors duration-150"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  View on npm <ArrowUpRight className="w-3.5 h-3.5" />
-                </a>
-                <a
-                  href={GITHUB_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#e0e0e0] px-5 py-3 text-sm text-black hover:border-black transition-colors duration-150"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  GitHub <ArrowUpRight className="w-3.5 h-3.5" />
-                </a>
+                {/* buttons */}
+                <div className="flex items-center gap-2">
+                  <Magnetic strength={0.25}>
+                    <Link
+                      href="/docs"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#0a0a0a] text-white px-5 py-3 text-sm hover:opacity-90 transition-opacity duration-150"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      Read the docs →
+                    </Link>
+                  </Magnetic>
+                  <a
+                    href={NPM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#e0e0e0] px-5 py-3 text-sm text-black hover:border-black transition-colors duration-150"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    View on npm <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                  <a
+                    href={GITHUB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#e0e0e0] px-5 py-3 text-sm text-black hover:border-black transition-colors duration-150"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    GitHub <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
-            </div>
+            </Reveal>
+
+            {/* Marquee strip */}
+            <Reveal delay={0.46} y={12}>
+              <div className="border-y border-[#f0f0f0] py-3 mb-12 -mx-5 sm:-mx-8 px-5 sm:px-8">
+                <Marquee items={MARQUEE_WORDS} />
+              </div>
+            </Reveal>
 
             {/* Feature tags */}
-            <div className="flex flex-wrap gap-2 mb-16">
-              {FEATURES.map(({ label, sub }) => (
-                <div
-                  key={label}
-                  className="inline-flex items-center gap-2 border border-[#e8e8e8] rounded-full px-4 py-2 text-sm text-black bg-[#fafafa] hover:border-black transition-colors duration-200 cursor-default"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" />
-                  <span style={{ fontFamily: "var(--font-heading)" }}>{label}</span>
-                  <span className="text-[#aaa] text-xs hidden sm:block">— {sub}</span>
-                </div>
-              ))}
-            </div>
+            <Reveal delay={0.1} y={20}>
+              <div className="flex flex-wrap gap-2 mb-16">
+                {FEATURES.map(({ label, sub }) => (
+                  <div
+                    key={label}
+                    className="inline-flex items-center gap-2 border border-[#e8e8e8] rounded-full px-4 py-2 text-sm text-black bg-[#fafafa] hover:border-black hover:-translate-y-0.5 transition-all duration-200 cursor-default"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" />
+                    <span style={{ fontFamily: "var(--font-heading)" }}>{label}</span>
+                    <span className="text-[#aaa] text-xs hidden sm:block">— {sub}</span>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
 
             {/* ── Two-col layout ─────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 items-start">
+            <Reveal delay={0.05} y={28} className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 items-start">
 
               {/* Left: tip form */}
               <div>
@@ -281,7 +301,7 @@ export function TipJarPage() {
                 {/* History */}
                 <TipHistory />
               </div>
-            </div>
+            </Reveal>
           </div>
         </section>
 
