@@ -3,10 +3,15 @@
 import { useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
+import { Copy, Check, ArrowUpRight } from "lucide-react";
 import { TipJar } from "./TipJar";
 import { TipHistory } from "./TipHistory";
 import { truncateAddress, SOLANA_NETWORK } from "@/lib/solana";
 import { useState, useEffect } from "react";
+
+const INSTALL_CMD = "bun add gasless-sol";
+const NPM_URL = "https://www.npmjs.com/package/gasless-sol";
+const GITHUB_URL = "https://github.com/Venkat5599/Solana";
 
 const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
@@ -26,6 +31,14 @@ export function TipJarPage() {
 
   const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [cmdCopied, setCmdCopied] = useState(false);
+
+  const copyCmd = () => {
+    navigator.clipboard.writeText(INSTALL_CMD).then(() => {
+      setCmdCopied(true);
+      setTimeout(() => setCmdCopied(false), 2000);
+    });
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 80);
@@ -103,10 +116,49 @@ export function TipJarPage() {
             </h1>
 
             {/* Sub */}
-            <p className="text-[clamp(15px,2vw,18px)] text-[#555] leading-relaxed max-w-lg mb-10">
-              Send on-chain USDC tips with zero SOL in your wallet. The sponsor
-              wallet covers Solana gas atomically — no exchange, no friction.
+            <p className="text-[clamp(15px,2vw,18px)] text-[#555] leading-relaxed max-w-lg mb-8">
+              The open-source SDK powering gasless Solana payments. Sponsor wallet
+              covers gas, users pay in USDC — fee and tip in one atomic transaction.
+              Drop it into any app in one line.
             </p>
+
+            {/* Install + CTA */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-10">
+              {/* install command pill */}
+              <button
+                onClick={copyCmd}
+                aria-label="Copy install command"
+                className="group inline-flex items-center gap-3 bg-[#0a0a0a] text-white rounded-full pl-5 pr-4 py-3 transition-opacity duration-150 hover:opacity-90"
+              >
+                <span className="text-[#666] font-mono text-sm select-none">$</span>
+                <span className="font-mono text-sm tracking-tight">{INSTALL_CMD}</span>
+                <span className="ml-1 text-[#888] group-hover:text-white transition-colors">
+                  {cmdCopied ? <Check className="w-4 h-4 text-[#4ade80]" /> : <Copy className="w-4 h-4" />}
+                </span>
+              </button>
+
+              {/* buttons */}
+              <div className="flex items-center gap-2">
+                <a
+                  href={NPM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#e0e0e0] px-5 py-3 text-sm text-black hover:border-black transition-colors duration-150"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  View on npm <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href={GITHUB_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#e0e0e0] px-5 py-3 text-sm text-black hover:border-black transition-colors duration-150"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  GitHub <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
 
             {/* Feature tags */}
             <div className="flex flex-wrap gap-2 mb-16">
